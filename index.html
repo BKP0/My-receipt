@@ -1,0 +1,100 @@
+import tkinter as tk
+from tkinter import ttk, messagebox, filedialog
+import datetime
+import csv
+
+class ReceiveVoucherApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Receive Voucher Software")
+        self.vouchers = []
+        self.create_widgets()
+
+    def create_widgets(self):
+        # Voucher Entry Frame
+        entry_frame = ttk.LabelFrame(self.root, text="Create Receive Voucher")
+        entry_frame.grid(row=0, column=0, padx=10, pady=10, sticky="ew")
+
+        ttk.Label(entry_frame, text="Date:").grid(row=0, column=0, sticky="w")
+        self.date_entry = ttk.Entry(entry_frame)
+        self.date_entry.insert(0, datetime.date.today().strftime('%Y-%m-%d'))
+        self.date_entry.grid(row=0, column=1, sticky="ew")
+
+        ttk.Label(entry_frame, text="Payer Name:").grid(row=1, column=0, sticky="w")
+        self.payer_name_entry = ttk.Entry(entry_frame)
+        self.payer_name_entry.grid(row=1, column=1, sticky="ew")
+
+        ttk.Label(entry_frame, text="Amount:").grid(row=2, column=0, sticky="w")
+        self.amount_entry = ttk.Entry(entry_frame)
+        self.amount_entry.grid(row=2, column=1, sticky="ew")
+
+        ttk.Label(entry_frame, text="Payment Method:").grid(row=3, column=0, sticky="w")
+        self.payment_method = ttk.Combobox(entry_frame, values=["Cash", "Bank Transfer", "Cheque", "Others"])
+        self.payment_method.grid(row=3, column=1, sticky="ew")
+
+        ttk.Label(entry_frame, text="Reference Details:").grid(row=4, column=0, sticky="w")
+        self.reference_entry = ttk.Entry(entry_frame)
+        self.reference_entry.grid(row=4, column=1, sticky="ew")
+
+        ttk.Label(entry_frame, text="Remarks:").grid(row=5, column=0, sticky="w")
+        self.remarks_entry = ttk.Entry(entry_frame)
+        self.remarks_entry.grid(row=5, column=1, sticky="ew")
+
+        ttk.Button(entry_frame, text="Save Voucher", command=self.save_voucher).grid(row=6, column=0, columnspan=2, pady=10)
+
+        # Voucher List Frame
+        list_frame = ttk.LabelFrame(self.root, text="Voucher List")
+        list_frame.grid(row=1, column=0, padx=10, pady=10, sticky="nsew")
+
+        self.tree = ttk.Treeview(list_frame, columns=("date", "payer", "amount", "method"), show="headings")
+        self.tree.heading("date", text="Date")
+        self.tree.heading("payer", text="Payer")
+        self.tree.heading("amount", text="Amount")
+        self.tree.heading("method", text="Method")
+        self.tree.pack(fill="both", expand=True)
+
+        ttk.Button(list_frame, text="Export to CSV", command=self.export_csv).pack(pady=5)
+
+    def save_voucher(self):
+        date = self.date_entry.get()
+        payer = self.payer_name_entry.get()
+        amount = self.amount_entry.get()
+        method = self.payment_method.get()
+        reference = self.reference_entry.get()
+        remarks = self.remarks_entry.get()
+
+        if not (date and payer and amount and method):
+            messagebox.showwarning("Validation Error", "Please fill in all required fields.")
+            return
+
+        voucher = (date, payer, amount, method, reference, remarks)
+        self.vouchers.append(voucher)
+        self.tree.insert("", "end", values=(date, payer, amount, method))
+        messagebox.showinfo("Success", "Voucher saved successfully.")
+        self.clear_entries()
+
+    def clear_entries(self):
+        self.payer_name_entry.delete(0, tk.END)
+        self.amount_entry.delete(0, tk.END)
+        self.payment_method.set('')
+        self.reference_entry.delete(0, tk.END)
+        self.remarks_entry.delete(0, tk.END)
+
+    def export_csv(self):
+        if not self.vouchers:
+            messagebox.showinfo("Info", "No vouchers to export.")
+            return
+
+        file_path = filedialog.asksaveasfilename(defaultextension=".csv", filetypes=[("CSV files", "*.csv")])
+        if file_path:
+            with open(file_path, "w", newline="") as f:
+                writer = csv.writer(f)
+                writer.writerow(["Date", "Payer Name", "Amount", "Payment Method", "Reference", "Remarks"])
+                for v in self.vouchers:
+                    writer.writerow(v)
+            messagebox.showinfo("Exported", f"Data exported to {file_path}")
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = ReceiveVoucherApp(root)
+    root.mainloop()
